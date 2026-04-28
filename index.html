@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 Ética.IA - Serious Game sobre IA e Enfermagem</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 2.5rem; border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px; width: 100%;
+            max-height: 90vh; overflow-y: auto;
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { color: #667eea; margin-bottom: 1rem; text-align: center; }
+        h2 { color: #764ba2; margin: 1.5rem 0 1rem 0; font-size: 1.3rem; }
+
+        .legal-text {
+            background: #f8f9fa; padding: 1.5rem; border-radius: 10px;
+            font-size: 0.9rem; line-height: 1.6; margin-bottom: 1rem;
+            border-left: 5px solid #667eea;
+        }
+
+        .input-group { margin-bottom: 1rem; }
+        input[type="text"] {
+            width: 100%; padding: 12px; border: 2px solid #667eea;
+            border-radius: 8px; margin-bottom: 10px;
+        }
+
+        button {
+            padding: 12px 20px; border: none; border-radius: 8px;
+            cursor: pointer; font-weight: bold; transition: 0.3s;
+            background: linear-gradient(135deg, #667eea, #764ba2); color: white;
+        }
+
+        button:hover:not(:disabled) { transform: translateY(-2px); opacity: 0.9; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+
+        .group-card { background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
+
+        .score-board {
+            display: flex; justify-content: space-around;
+            background: #f0f4ff; padding: 15px; border-radius: 10px; margin-bottom: 20px;
+        }
+
+        /* --- AS LINHAS ALTERADAS PARA AMARELO COMEÇAM AQUI --- */
+        .option-button {
+            width: 100%; text-align: left; padding: 15px;
+            margin-bottom: 10px; 
+            border: 2px solid #f1c40f; /* Cor da borda amarela */
+            background: #fff9db;       /* Cor de fundo amarela clara */
+            border-radius: 10px; 
+            font-size: 1rem; 
+            color: #856404;            /* Cor do texto para leitura no amarelo */
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .option-button:hover { 
+            background: #f1c40f;       /* Amarelo forte no hover */
+            color: white; 
+        }
+        /* --- FIM DAS ALTERAÇÕES DE COR --- */
+
+        .feedback-message { padding: 15px; border-radius: 10px; margin-top: 15px; font-weight: bold; line-height: 1.4; }
+        .correct { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .wrong { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        .table-results { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table-results th, .table-results td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        .table-results th { background: #667eea; color: white; }
+    </style>
+</head>
+<body>
+
+<div id="intro-screen" class="container">
+    <h1>🏥 Ética.IA</h1>
+    <p style="text-align:center; font-weight:bold; color:#764ba2;">Desafios da Ética da IA na Área da Saúde</p>
+
+    <div class="legal-section">
+        <h2>⚖️ Aviso Legal e Educacional</h2>
+        <div class="legal-text">
+            <p><strong>Objetivo:</strong> Este jogo sério foi desenvolvido exclusivamente para fins educacionais.</p>
+            <p><strong>Compromisso:</strong> Ao jogar, você concorda em aplicar esses conhecimentos seguindo a LGPD e o Código de Ética Profissional.</p>
+        </div>
+        <label><input type="checkbox" id="agreeTerms"> Eu li e concordo com os termos acima.</label>
+    </div>
+
+    <div class="participant-section">
+        <h2>👥 Cadastre os Participantes</h2>
+        <div class="input-group">
+            <input type="text" id="groupNameInput" placeholder="Nome do Grupo (ex: Equipe A)">
+            <input type="text" id="participantNameInput" placeholder="Nome do Participante">
+            <button onclick="addParticipant()">+ Adicionar Participante</button>
+        </div>
+        <div id="groupsDisplay"></div>
+    </div>
+
+    <button id="startGameBtn" style="width:100%; margin-top:20px; font-size:1.2rem;" onclick="startGame()" disabled>🚀 Iniciar Jogo</button>
+</div>
+
+<div id="game-screen" class="container hidden">
+    <div class="score-board">
+        <span>✅ Corretas: <strong id="score">0</strong></span>
+        <span>❌ Erros: <strong id="errors">0</strong></span>
+        <span>🎯 Pergunta: <strong id="question-number">1</strong>/8</span>
+    </div>
+
+    <div style="margin-bottom:15px; padding:10px; background:#eef; border-radius:8px;">
+        <strong>Jogador:</strong> <span id="currentPlayerName"></span> | <strong>Grupo:</strong> <span id="currentGroupName"></span>
+    </div>
+
+    <div id="game-ui">
+        <div style="background:#667eea; color:white; padding:10px; border-radius:8px; margin-bottom:10px; display:inline-block;" id="topic-badge"></div>
+        <p id="scenario-text" style="font-size:1.1rem; font-weight: 500; margin-bottom:20px; color: #444;"></p>
+        <div id="options-container"></div>
+    </div>
+
+    <div id="feedback" class="feedback-message hidden"></div>
+    
+    <div style="margin-top:20px; display:flex; gap:10px;">
+        <button id="next-btn" class="hidden" onclick="loadNextParticipant()">Próximo Jogador →</button>
+        <button id="finish-early" style="background:#e74c3c;" onclick="endGame()">Finalizar Jogo</button>
+    </div>
+</div>
+
+<div id="results-screen" class="container hidden">
+    <h1>🏆 Resultados Finais</h1>
+    <div id="resultsContent"></div>
+    <button style="width:100%; margin-top:20px;" onclick="location.reload()">🔄 Jogar Novamente</button>
+</div>
+
+<script>
+    const questions = [
+        {
+            topic: "Responsabilidade Legal",
+            scenario: "Um sistema de IA sugere alto risco de sepse, mas sua observação clínica mostra o paciente estável. O que você faz?",
+            options: [
+                { text: "Confia na IA e inicia tratamento agressivo imediatamente.", correct: false },
+                { text: "Ignora a IA e não documenta o alerta no prontuário.", correct: false },
+                { text: "Realiza validação clínica manual e documenta a divergência.", correct: true }
+            ],
+            explanation: "O profissional mantém a autonomia clínica. A supervisão humana é obrigatória em decisões de IA."
+        },
+        {
+            topic: "Privacidade (LGPD)",
+            scenario: "Um pesquisador pede acesso a dados de pacientes para treinar uma IA sem anonimização. Como proceder?",
+            options: [
+                { text: "Compartilha, pois o progresso científico é prioridade.", correct: false },
+                { text: "Exige anonimização dos dados e verifica o termo de consentimento.", correct: true },
+                { text: "Permite acesso apenas se os dados forem de pacientes antigos.", correct: false }
+            ],
+            explanation: "A LGPD protege dados sensíveis de saúde. A anonimização é regra de ouro."
+        },
+        {
+            topic: "Explicabilidade",
+            scenario: "Um software de IA recomenda suspender uma medicação, mas não explica o porquê. Qual a conduta ética?",
+            options: [
+                { text: "Suspende a medicação conforme sugerido para evitar erros.", correct: false },
+                { text: "Não executa a ação e busca entender a lógica do algoritmo ou parecer técnico.", correct: true },
+                { text: "Desinstala o software imediatamente.", correct: false }
+            ],
+            explanation: "Algoritmos 'caixa-preta' são perigosos. O profissional deve compreender a base da recomendação."
+        },
+        {
+            topic: "Vício de Consentimento",
+            scenario: "Um paciente pergunta se o diagnóstico foi feito por um humano ou máquina. O que dizer?",
+            options: [
+                { text: "Diz que foi humano para não assustar o paciente.", correct: false },
+                { text: "Explica com transparência o uso da IA como suporte à decisão humana.", correct: true },
+                { text: "Diz que não sabe como o sistema funciona.", correct: false }
+            ],
+            explanation: "A transparência é direito do paciente e dever ético do profissional."
+        },
+        {
+            topic: "Viés Algorítmico",
+            scenario: "Você nota que a IA de triagem sempre prioriza pacientes de uma certa etnia ou classe. O que fazer?",
+            options: [
+                { text: "Aceita, pois a IA é matematicamente neutra.", correct: false },
+                { text: "Interrompe o uso e reporta o viés à gestão técnica.", correct: true },
+                { text: "Tenta compensar o erro triando os outros manualmente sem avisar.", correct: false }
+            ],
+            explanation: "IAs podem herdar preconceitos humanos. Identificar e reportar vieses é essencial para a justiça."
+        },
+        {
+            topic: "Dever de Vigilância",
+            scenario: "A IA está operando perfeitamente há meses. Você pode reduzir a frequência da conferência manual?",
+            options: [
+                { text: "Sim, para otimizar o tempo da equipe.", correct: false },
+                { text: "Não, o dever de vigilância profissional é constante e inalienável.", correct: true },
+                { text: "Apenas se o fabricante garantir 100% de precisão.", correct: false }
+            ],
+            explanation: "A tecnologia é suporte, nunca substituta da vigilância e responsabilidade profissional."
+        },
+        {
+            topic: "Segurança do Paciente",
+            scenario: "O sistema de IA apresenta um erro técnico (bug) durante um plantão. Qual a primeira ação?",
+            options: [
+                { text: "Tentar consertar o código do software.", correct: false },
+                { text: "Migrar imediatamente para protocolos manuais de segurança.", correct: true },
+                { text: "Aguardar o suporte técnico para tomar qualquer decisão clínica.", correct: false }
+            ],
+            explanation: "Em falhas tecnológicas, a continuidade do cuidado seguro via métodos manuais é a prioridade."
+        },
+        {
+            topic: "Bioética",
+            scenario: "A IA sugere um tratamento experimental baseado em dados globais, mas o paciente recusa. O que prevalece?",
+            options: [
+                { text: "A sugestão da IA, por ser baseada em ciência de dados.", correct: false },
+                { text: "A autonomia do paciente em recusar o tratamento.", correct: true },
+                { text: "A decisão do hospital de testar a nova tecnologia.", correct: false }
+            ],
+            explanation: "Nenhuma tecnologia sobrepõe-se à autonomia e dignidade do paciente."
+        }
+    ];
+
+    let participants = {};
+    let currentParticipantIndex = 0;
+    let currentQuestion = 0;
+    let answered = false;
+
+    function addParticipant() {
+        const gn = document.getElementById('groupNameInput').value.trim();
+        const pn = document.getElementById('participantNameInput').value.trim();
+        if(!gn || !pn) return;
+        if(!participants[gn]) participants[gn] = [];
+        participants[gn].push({ name: pn, score: 0, errors: 0 });
+        document.getElementById('participantNameInput').value = '';
+        updateDisplay();
+    }
+
+    function updateDisplay() {
+        const disp = document.getElementById('groupsDisplay');
+        disp.innerHTML = '';
+        Object.entries(participants).forEach(([group, members]) => {
+            const div = document.createElement('div');
+            div.className = 'group-card';
+            div.innerHTML = `<strong>${group}:</strong> ` + members.map(m => m.name).join(', ');
+            disp.appendChild(div);
+        });
+        checkStart();
+    }
+
+    function checkStart() {
+        const total = Object.values(participants).flat().length;
+        document.getElementById('startGameBtn').disabled = !document.getElementById('agreeTerms').checked || total === 0;
+    }
+
+    document.getElementById('agreeTerms').onclick = checkStart;
+
+    function startGame() {
+        document.getElementById('intro-screen').classList.add('hidden');
+        document.getElementById('game-screen').classList.remove('hidden');
+        loadParticipant();
+    }
+
+    function loadParticipant() {
+        const all = Object.entries(participants).flatMap(([gn, members]) => members.map(m => ({gn, m})));
+        const current = all[currentParticipantIndex];
+        
+        if(!current) return endGame();
+
+        document.getElementById('currentPlayerName').textContent = current.m.name;
+        document.getElementById('currentGroupName').textContent = current.gn;
+        document.getElementById('score').textContent = current.m.score;
+        document.getElementById('errors').textContent = current.m.errors;
+        
+        currentQuestion = 0;
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        answered = false;
+        const q = questions[currentQuestion];
+        document.getElementById('scenario-text').textContent = q.scenario;
+        document.getElementById('topic-badge').textContent = q.topic;
+        document.getElementById('question-number').textContent = currentQuestion + 1;
+        document.getElementById('feedback').classList.add('hidden');
+        document.getElementById('next-btn').classList.add('hidden');
+        
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-button';
+            btn.textContent = opt.text;
+            btn.onclick = () => checkAnswer(idx);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx) {
+        if(answered) return;
+        answered = true;
+        
+        const q = questions[currentQuestion];
+        const all = Object.entries(participants).flatMap(([gn, members]) => members.map(m => ({gn, m})));
+        const current = all[currentParticipantIndex];
+        const fb = document.getElementById('feedback');
+        
+        fb.classList.remove('hidden');
+        if(q.options[idx].correct) {
+            current.m.score++;
+            fb.className = 'feedback-message correct';
+            fb.textContent = "✅ Correto! " + q.explanation;
+        } else {
+            current.m.errors++;
+            fb.className = 'feedback-message wrong';
+            fb.textContent = "❌ Incorreto. " + q.explanation;
+        }
+
+        document.getElementById('score').textContent = current.m.score;
+        document.getElementById('errors').textContent = current.m.errors;
+
+        setTimeout(() => {
+            if(currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                loadQuestion();
+            } else {
+                document.getElementById('next-btn').classList.remove('hidden');
+            }
+        }, 3000);
+    }
+
+    function loadNextParticipant() {
+        currentParticipantIndex++;
+        const all = Object.entries(participants).flatMap(([gn, members]) => members.map(m => ({gn, m})));
+        
+        if (currentParticipantIndex < all.length) {
+            loadParticipant();
+        } else {
+            endGame();
+        }
+    }
+
+    function endGame() {
+        document.getElementById('game-screen').classList.add('hidden');
+        document.getElementById('results-screen').classList.remove('hidden');
+        let html = '<table class="table-results"><tr><th>Nome</th><th>Grupo</th><th>✅ Acertos</th><th>❌ Erros</th></tr>';
+        Object.entries(participants).forEach(([gn, members]) => {
+            members.forEach(m => {
+                html += `<tr><td>${m.name}</td><td>${gn}</td><td>${m.score}</td><td>${m.errors}</td></tr>`;
+            });
+        });
+        html += '</table>';
+        document.getElementById('resultsContent').innerHTML = html;
+    }
+</script>
+</body>
+</html>
