@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏥 Ethical.AI - Nursing Serious Game</title>
+    <style>
+        /* CSS INTEGRADO - Estilo Profissional e Organizado */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1a2a6c);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Container Principal com efeito de vidro */
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            width: 100%;
+            max-width: 700px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hidden { display: none !important; }
+
+        h1 { color: #1a2a6c; font-size: 2.2rem; margin-bottom: 5px; }
+        .subtitle { color: #555; margin-bottom: 20px; font-weight: 600; }
+
+        /* Box de Informação */
+        .info-box {
+            background: #f1f3f5;
+            border-left: 6px solid #3498db;
+            padding: 20px;
+            text-align: left;
+            margin: 20px 0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* Inputs e Lista de Grupos */
+        .input-group { display: flex; gap: 10px; margin: 25px 0; }
+        input { 
+            flex: 1; 
+            padding: 15px; 
+            border: 2px solid #ddd; 
+            border-radius: 12px; 
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+        input:focus { border-color: #3498db; outline: none; }
+
+        button {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-add { background: #3498db; color: white; }
+        .btn-add:hover { background: #2980b9; transform: translateY(-2px); }
+
+        .btn-start { 
+            background: #27ae60; 
+            color: white; 
+            width: 100%; 
+            font-size: 1.2rem; 
+            margin-top: 10px;
+        }
+        .btn-start:hover { background: #2ecc71; letter-spacing: 1px; }
+
+        .group-item {
+            background: #eef2f3;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            text-align: left;
+            font-weight: bold;
+            color: #1a2a6c;
+            border: 1px solid #dee2e6;
+        }
+
+        /* Interface do Jogo */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+            font-weight: bold;
+            color: #1a2a6c;
+            font-size: 1.1rem;
+        }
+
+        .question-box {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            text-align: left;
+            border: 1px solid #f0f0f0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .options-list { display: flex; flex-direction: column; gap: 12px; }
+        .opt-btn {
+            background: white;
+            border: 2px solid #3498db;
+            color: #3498db;
+            text-align: left;
+            padding: 18px;
+            font-size: 1.05rem;
+            border-radius: 12px;
+        }
+        .opt-btn:hover { background: #3498db; color: white; padding-left: 25px; }
+
+        /* Ranking */
+        .ranking-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .ranking-table th { padding: 12px; color: #888; border-bottom: 2px solid #eee; }
+        .ranking-table td { padding: 18px; font-weight: bold; font-size: 1.1rem; border-bottom: 1px solid #f8f9fa; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-intro" class="main-card">
+        <h1>🏥 Ethical.AI</h1>
+        <p class="subtitle">Serious Game: Enfermagem e IA</p>
+
+        <div class="info-box">
+            <strong>Objetivo Educacional:</strong>
+            <p>Analise os cenários clínicos, considere a ética profissional e a LGPD para tomar a decisão correta. Cada acerto vale 10 pontos.</p>
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="input-name" placeholder="Nome do Grupo ou Participante...">
+            <button class="btn-add" onclick="addParticipant()">Adicionar</button>
+        </div>
+        
+        <div id="list-container" style="margin-bottom: 20px;"></div>
+        
+        <button id="btn-start-game" class="btn-start hidden" onclick="initGame()">Começar Desafio</button>
+    </div>
+
+    <div id="screen-game" class="main-card hidden">
+        <div class="game-header">
+            <span>Grupo: <span id="current-team-name" style="color:#3498db;">-</span></span>
+            <span>Pontos: <span id="current-team-score" style="color:#27ae60;">0</span></span>
+        </div>
+
+        <div class="question-box">
+            <p id="q-category" style="color:#e67e22; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; margin-bottom: 10px;"></p>
+            <p id="q-text" style="font-size: 1.25rem; line-height: 1.4; color: #2c3e50;"></p>
+        </div>
+
+        <div id="q-options" class="options-list"></div>
+    </div>
+
+    <div id="screen-results" class="main-card hidden">
+        <h1>🏆 Ranking Final</h1>
+        <table class="ranking-table">
+            <thead>
+                <tr><th>Participante</th><th>Pontuação</th></tr>
+            </thead>
+            <tbody id="ranking-body"></tbody>
+        </table>
+        <button class="btn-start" style="margin-top: 30px;" onclick="location.reload()">Reiniciar Jogo</button>
+    </div>
+
+    <script>
+        let players = [];
+        let pIndex = 0;
+        let qIndex = 0;
+
+        const quizData = [
+            {
+                category: "Responsabilidade Profissional",
+                text: "Uma IA sugere um diagnóstico de sepse, mas o seu exame físico mostra o paciente estável. Qual a conduta ética?",
+                options: [
+                    { t: "Confiar na IA e iniciar protocolo de sepse imediatamente.", c: false },
+                    { t: "Ignorar o alerta da IA e não fazer o registro no prontuário.", c: false },
+                    { t: "Validar clinicamente, registrar os achados e monitorar o paciente.", c: true }
+                ]
+            },
+            {
+                category: "Privacidade e LGPD",
+                text: "Uma empresa de software pede acesso aos dados brutos dos pacientes para 'treinar' a IA sem anonimização. Isso é permitido?",
+                options: [
+                    { t: "Sim, pois ajuda no desenvolvimento tecnológico da saúde.", c: false },
+                    { t: "Não, fere a LGPD e os direitos de privacidade do paciente.", c: true }
+                ]
+            }
+        ];
+
+        function addParticipant() {
+            const inp = document.getElementById('input-name');
+            if(inp.value.trim() !== "") {
+                players.push({ name: inp.value.trim(), score: 0 });
+                inp.value = "";
+                updateList();
+            }
+        }
+
+        function updateList() {
+            const container = document.getElementById('list-container');
+            container.innerHTML = players.map(p => `<div class="group-item">👤 ${p.name}</div>`).join('');
+            if(players.length > 0) document.getElementById('btn-start-game').classList.remove('hidden');
+        }
+
+        function initGame() {
+            document.getElementById('screen-intro').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const p = players[pIndex];
+            const q = quizData[qIndex];
+
+            document.getElementById('current-team-name').innerText = p.name;
+            document.getElementById('current-team-score').innerText = p.score;
+            document.getElementById('q-category').innerText = q.category;
+            document.getElementById('q-text').innerText = q.text;
+
+            const opts = document.getElementById('q-options');
+            opts.innerHTML = "";
+            q.options.forEach(o => {
+                const b = document.createElement('button');
+                b.className = 'opt-btn';
+                b.innerText = o.t;
+                b.onclick = () => {
+                    if(o.c) players[pIndex].score += 10;
+                    nextStep();
+                };
+                opts.appendChild(b);
+            });
+        }
+
+        function nextStep() {
+            pIndex++;
+            if(pIndex >= players.length) {
+                pIndex = 0;
+                qIndex++;
+            }
+
+            if(qIndex < quizData.length) {
+                renderQuestion();
+            } else {
+                showRanking();
+            }
+        }
+
+        function showRanking() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-results').classList.remove('hidden');
+            const sorted = [...players].sort((a,b) => b.score - a.score);
+            document.getElementById('ranking-body').innerHTML = sorted.map(p => `
+                <tr><td>${p.name}</td><td>${p.score} pts</td></tr>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
